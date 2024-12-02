@@ -5,12 +5,15 @@ import {
   Component,
   Directive,
   ElementRef,
+  effect,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
 import { extend, getLocalState, injectBeforeRender, injectObjectEvents } from 'angular-three';
+import { NgtsEnvironment } from 'angular-three-soba/staging';
 import { BoxGeometry, Mesh, MeshBasicMaterial } from 'three';
+import { GhostSkullModel, GhostSkullModelAnimationApi } from './ghost-skull-model';
 
 @Directive({
   selector: '[cursorPointer]',
@@ -46,13 +49,18 @@ export class CursorPointer {
       <ngt-box-geometry />
       <ngt-mesh-basic-material [color]="hovered() ? 'hotpink' : 'orange'" />
     </ngt-mesh>
+
+    <app-ghost-skull-model [(animations)]="ghostSkullAnimations" />
+    <ngts-environment [options]="{ preset: 'city' }" />
   `,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CursorPointer],
+  imports: [CursorPointer, GhostSkullModel, NgtsEnvironment],
 })
 export class Experience {
   private meshRef = viewChild.required<ElementRef<Mesh>>('mesh');
+
+  ghostSkullAnimations = signal<GhostSkullModelAnimationApi>(null);
 
   protected hovered = signal(false);
   protected clicked = signal(false);
@@ -63,6 +71,13 @@ export class Experience {
       const mesh = this.meshRef().nativeElement;
       mesh.rotation.x += delta;
       mesh.rotation.y += delta;
+    });
+
+    effect(() => {
+      const animations = this.ghostSkullAnimations();
+      if (!animations) return;
+
+      animations.actions.Flying_Idle?.reset().fadeIn(0.5).play();
     });
   }
 }
