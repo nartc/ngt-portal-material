@@ -2,32 +2,34 @@
 Command: npx angular-three-gltf&#64;1.0.16 public/Ninja.gltf -o src/app/experience/ninja-model.ts --selector app-ninja-model --name NinjaModel --transform
 **/
 
-import type * as THREE from 'three'
-import { Group, SkinnedMesh } from 'three'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  model,
+  signal,
+  Signal,
+  viewChild,
+} from '@angular/core';
 import {
   extend,
+  NgtArgs,
   NgtGroup,
   NgtObjectEvents,
   NgtObjectEventsInputs,
   NgtObjectEventsOutputs,
-  NgtArgs,
-} from 'angular-three'
-import {
-  Component,
-  ChangeDetectionStrategy,
-  CUSTOM_ELEMENTS_SCHEMA,
-  Signal,
-  input,
-  viewChild,
-  ElementRef,
-  inject,
-  effect,
-  computed,
-  model,
-} from '@angular/core'
-import { injectGLTF } from 'angular-three-soba/loaders'
-import { GLTF } from 'three-stdlib'
-import { injectAnimations, NgtsAnimationClips, NgtsAnimationApi } from 'angular-three-soba/misc'
+} from 'angular-three';
+import { injectGLTF } from 'angular-three-soba/loaders';
+import { injectAnimations, NgtsAnimationApi, NgtsAnimationClips } from 'angular-three-soba/misc';
+import type * as THREE from 'three';
+import { Group, SkinnedMesh } from 'three';
+import { GLTF } from 'three-stdlib';
+import { injectModelAnimation } from './model-animation';
 
 type ActionName =
   | 'Death'
@@ -43,26 +45,26 @@ type ActionName =
   | 'Walk'
   | 'Wave'
   | 'Weapon'
-  | 'Yes'
-type NinjaModelAnimationClips = NgtsAnimationClips<ActionName>
-export type NinjaModelAnimationApi = NgtsAnimationApi<NinjaModelAnimationClips> | null
+  | 'Yes';
+type NinjaModelAnimationClips = NgtsAnimationClips<ActionName>;
+export type NinjaModelAnimationApi = NgtsAnimationApi<NinjaModelAnimationClips> | null;
 export type NinjaModelGLTFResult = GLTF & {
-  animations: NinjaModelAnimationClips[]
+  animations: NinjaModelAnimationClips[];
   nodes: {
-    Ninja: THREE.SkinnedMesh
-    Root: THREE.Bone
-  }
+    Ninja: THREE.SkinnedMesh;
+    Root: THREE.Bone;
+  };
   materials: {
-    Atlas: THREE.MeshStandardMaterial
-  }
-}
+    Atlas: THREE.MeshStandardMaterial;
+  };
+};
 
 @Component({
   selector: 'app-ninja-model',
   standalone: true,
   template: `
     @if (gltf(); as gltf) {
-      <ngt-group #model [parameters]="options()">
+      <ngt-group #model [parameters]="options()" (pointerover)="hovered.set(true)" (pointerout)="hovered.set(false)">
         <ngt-group name="Scene">
           <ngt-group name="CharacterArmature">
             <ngt-primitive *args="[gltf.nodes.Root]" />
@@ -70,7 +72,8 @@ export type NinjaModelGLTFResult = GLTF & {
               name="Ninja"
               [geometry]="gltf.nodes.Ninja.geometry"
               [material]="gltf.materials.Atlas"
-              [skeleton]="gltf.nodes.Ninja.skeleton" />
+              [skeleton]="gltf.nodes.Ninja.skeleton"
+            />
           </ngt-group>
         </ngt-group>
 
@@ -79,56 +82,53 @@ export type NinjaModelGLTFResult = GLTF & {
     }
   `,
   imports: [NgtArgs],
-  hostDirectives: [
-    {
-      directive: NgtObjectEvents,
-      inputs: NgtObjectEventsInputs,
-      outputs: NgtObjectEventsOutputs,
-    },
-  ],
+  hostDirectives: [{ directive: NgtObjectEvents, inputs: NgtObjectEventsInputs, outputs: NgtObjectEventsOutputs }],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NinjaModel {
-  protected readonly Math = Math
+  protected readonly Math = Math;
 
-  options = input({} as Partial<NgtGroup>)
-  animations = model<NinjaModelAnimationApi>()
-  modelRef = viewChild<ElementRef<Group>>('model')
+  options = input({} as Partial<NgtGroup>);
+  animations = model<NinjaModelAnimationApi>();
+  modelRef = viewChild<ElementRef<Group>>('model');
 
   protected gltf = injectGLTF(() => '/Ninja-transformed.glb', {
     useDraco: true,
-  }) as unknown as Signal<NinjaModelGLTFResult | null>
+  }) as unknown as Signal<NinjaModelGLTFResult | null>;
+  protected hovered = signal(false);
 
   private scene = computed(() => {
-    const gltf = this.gltf()
-    if (!gltf) return null
-    return gltf.scene
-  })
+    const gltf = this.gltf();
+    if (!gltf) return null;
+    return gltf.scene;
+  });
 
-  private objectEvents = inject(NgtObjectEvents, { host: true })
+  private objectEvents = inject(NgtObjectEvents, { host: true });
 
   constructor() {
-    extend({ Group, SkinnedMesh })
+    extend({ Group, SkinnedMesh });
 
-    const animations = injectAnimations(this.gltf, this.scene)
+    injectModelAnimation(this.hovered, this.animations, 'Idle', 'Wave');
+
+    const animations = injectAnimations(this.gltf, this.scene);
     effect(
       () => {
         if (animations.ready()) {
-          this.animations.set(animations)
+          this.animations.set(animations);
         }
       },
       { allowSignalWrites: true },
-    )
+    );
 
     effect(
       () => {
-        const modelRef = this.modelRef()?.nativeElement
-        if (!modelRef) return
+        const modelRef = this.modelRef()?.nativeElement;
+        if (!modelRef) return;
 
-        this.objectEvents.ngtObjectEvents.set(modelRef)
+        this.objectEvents.ngtObjectEvents.set(modelRef);
       },
       { allowSignalWrites: true },
-    )
+    );
   }
 }

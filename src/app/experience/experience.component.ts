@@ -1,104 +1,51 @@
-import { DOCUMENT } from '@angular/common';
-import {
-  CUSTOM_ELEMENTS_SCHEMA,
-  ChangeDetectionStrategy,
-  Component,
-  Directive,
-  ElementRef,
-  effect,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { extend, getLocalState, injectBeforeRender, injectObjectEvents } from 'angular-three';
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component } from '@angular/core';
+import { extend } from 'angular-three';
+import { NgtsCameraControls } from 'angular-three-soba/controls';
 import { NgtsEnvironment } from 'angular-three-soba/staging';
-import { BoxGeometry, Mesh, MeshBasicMaterial } from 'three';
-import { GhostSkullModel, GhostSkullModelAnimationApi } from './ghost-skull-model';
-import { MushroomKingModel, MushroomKingModelAnimationApi } from './mushroom-king-model';
-import { NinjaModel, NinjaModelAnimationApi } from './ninja-model';
+import * as THREE from 'three';
+import { GhostSkullModel } from './ghost-skull-model';
+import { MonsterStage } from './monster-stage';
+import { MushroomKingModel } from './mushroom-king-model';
+import { NinjaModel } from './ninja-model';
 
-@Directive({
-  selector: '[cursorPointer]',
-  standalone: true,
-})
-export class CursorPointer {
-  constructor() {
-    const document = inject(DOCUMENT);
-    const hostElement = inject<ElementRef<Mesh>>(ElementRef);
-    const mesh = hostElement.nativeElement;
-
-    const localState = getLocalState(mesh);
-    if (!localState) return;
-
-    injectObjectEvents(() => mesh, {
-      pointerover: () => void (document.body.style.cursor = 'pointer'),
-      pointerout: () => void (document.body.style.cursor = 'default'),
-    });
-  }
-}
+extend(THREE);
 
 @Component({
   standalone: true,
   template: `
-    <ngt-mesh
-      #mesh
-      cursorPointer
-      (click)="clicked.set(!clicked())"
-      (pointerover)="hovered.set(true)"
-      (pointerout)="hovered.set(false)"
-      [scale]="clicked() ? 1.5 : 1"
+    <ngts-camera-controls [options]="{ makeDefault: true, maxPolarAngle: Math.PI / 2, minPolarAngle: Math.PI / 6 }" />
+
+    <ngt-ambient-light [intensity]="Math.PI * 0.5" />
+    <ngts-environment [options]="{ preset: 'sunset' }" />
+
+    <app-monster-stage [position]="[0, 0, -0.5]" name="Ghost Skull" color="#221210" texturePath="ghost-town.jpg">
+      <app-ghost-skull-model [options]="{ scale: 0.6, position: [0, -1, 0] }" />
+    </app-monster-stage>
+
+    <app-monster-stage
+      [position]="[-2.5, 0, 0]"
+      [rotation]="[0, Math.PI / 8, 0]"
+      name="Mushroom King"
+      color="#D7BBA3"
+      texturePath="mushroom-forest.jpg"
     >
-      <ngt-box-geometry />
-      <ngt-mesh-basic-material [color]="hovered() ? 'hotpink' : 'orange'" />
-    </ngt-mesh>
+      <app-mushroom-king-model [options]="{ scale: 0.6, position: [0, -1, 0] }" />
+    </app-monster-stage>
 
-    <app-ghost-skull-model [(animations)]="ghostSkullAnimations" />
-    <app-mushroom-king-model [(animations)]="mushroomKingAnimations" [options]="{ position: [3, 0, -2] }" />
-    <app-ninja-model [(animations)]="ninjaAnimations" [options]="{ position: [-3, 0, -2] }" />
-
-    <ngts-environment [options]="{ preset: 'city' }" />
+    <app-monster-stage
+      [position]="[2.5, 0, 0]"
+      [rotation]="[0, -Math.PI / 8, 0]"
+      name="Ninja"
+      color="#AD8A60"
+      texturePath="ninja-town.jpg"
+    >
+      <app-ninja-model [options]="{ scale: 0.6, position: [0, -1, 0] }" />
+    </app-monster-stage>
   `,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CursorPointer, GhostSkullModel, NgtsEnvironment, MushroomKingModel, NinjaModel],
+  imports: [GhostSkullModel, NgtsEnvironment, MushroomKingModel, NinjaModel, NgtsCameraControls, MonsterStage],
 })
 export class Experience {
-  private meshRef = viewChild.required<ElementRef<Mesh>>('mesh');
-
-  ghostSkullAnimations = signal<GhostSkullModelAnimationApi>(null);
-  mushroomKingAnimations = signal<MushroomKingModelAnimationApi>(null);
-  ninjaAnimations = signal<NinjaModelAnimationApi>(null);
-
-  protected hovered = signal(false);
-  protected clicked = signal(false);
-
-  constructor() {
-    extend({ Mesh, BoxGeometry, MeshBasicMaterial });
-    injectBeforeRender(({ delta }) => {
-      const mesh = this.meshRef().nativeElement;
-      mesh.rotation.x += delta;
-      mesh.rotation.y += delta;
-    });
-
-    effect(() => {
-      const animations = this.ghostSkullAnimations();
-      if (!animations) return;
-
-      animations.actions.Flying_Idle?.reset().fadeIn(0.5).play();
-    });
-
-    effect(() => {
-      const animations = this.mushroomKingAnimations();
-      if (!animations) return;
-
-      animations.actions.Walk?.reset().fadeIn(0.5).play();
-    });
-
-    effect(() => {
-      const animations = this.ninjaAnimations();
-      if (!animations) return;
-
-      animations.actions.Walk?.reset().fadeIn(0.5).play();
-    });
-  }
+  protected readonly Math = Math;
 }

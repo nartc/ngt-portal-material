@@ -2,53 +2,55 @@
 Command: npx angular-three-gltf&#64;1.0.16 public/Ghost_Skull.gltf -o src/app/experience/ghost-skull-model.ts --selector app-ghost-skull-model --name GhostSkullModel --transform
 **/
 
-import type * as THREE from 'three'
-import { Group, SkinnedMesh } from 'three'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  model,
+  signal,
+  Signal,
+  viewChild,
+} from '@angular/core';
 import {
   extend,
+  NgtArgs,
   NgtGroup,
   NgtObjectEvents,
   NgtObjectEventsInputs,
   NgtObjectEventsOutputs,
-  NgtArgs,
-} from 'angular-three'
-import {
-  Component,
-  ChangeDetectionStrategy,
-  CUSTOM_ELEMENTS_SCHEMA,
-  Signal,
-  input,
-  viewChild,
-  ElementRef,
-  inject,
-  effect,
-  computed,
-  model,
-} from '@angular/core'
-import { injectGLTF } from 'angular-three-soba/loaders'
-import { GLTF } from 'three-stdlib'
-import { injectAnimations, NgtsAnimationClips, NgtsAnimationApi } from 'angular-three-soba/misc'
+} from 'angular-three';
+import { injectGLTF } from 'angular-three-soba/loaders';
+import { injectAnimations, NgtsAnimationApi, NgtsAnimationClips } from 'angular-three-soba/misc';
+import type * as THREE from 'three';
+import { Group, SkinnedMesh } from 'three';
+import { GLTF } from 'three-stdlib';
+import { injectModelAnimation } from './model-animation';
 
-type ActionName = 'Death' | 'Fast_Flying' | 'Flying_Idle' | 'Headbutt' | 'HitReact' | 'No' | 'Punch' | 'Yes'
-type GhostSkullModelAnimationClips = NgtsAnimationClips<ActionName>
-export type GhostSkullModelAnimationApi = NgtsAnimationApi<GhostSkullModelAnimationClips> | null
+type ActionName = 'Death' | 'Fast_Flying' | 'Flying_Idle' | 'Headbutt' | 'HitReact' | 'No' | 'Punch' | 'Yes';
+type GhostSkullModelAnimationClips = NgtsAnimationClips<ActionName>;
+export type GhostSkullModelAnimationApi = NgtsAnimationApi<GhostSkullModelAnimationClips> | null;
 export type GhostSkullModelGLTFResult = GLTF & {
-  animations: GhostSkullModelAnimationClips[]
+  animations: GhostSkullModelAnimationClips[];
   nodes: {
-    Ghost_Skull: THREE.SkinnedMesh
-    Root: THREE.Bone
-  }
+    Ghost_Skull: THREE.SkinnedMesh;
+    Root: THREE.Bone;
+  };
   materials: {
-    Atlas: THREE.MeshStandardMaterial
-  }
-}
+    Atlas: THREE.MeshStandardMaterial;
+  };
+};
 
 @Component({
   selector: 'app-ghost-skull-model',
   standalone: true,
   template: `
     @if (gltf(); as gltf) {
-      <ngt-group #model [parameters]="options()">
+      <ngt-group #model [parameters]="options()" (pointerover)="hovered.set(true)" (pointerout)="hovered.set(false)">
         <ngt-group name="Scene">
           <ngt-group name="CharacterArmature">
             <ngt-primitive *args="[gltf.nodes.Root]" />
@@ -56,7 +58,8 @@ export type GhostSkullModelGLTFResult = GLTF & {
               name="Ghost_Skull"
               [geometry]="gltf.nodes.Ghost_Skull.geometry"
               [material]="gltf.materials.Atlas"
-              [skeleton]="gltf.nodes.Ghost_Skull.skeleton" />
+              [skeleton]="gltf.nodes.Ghost_Skull.skeleton"
+            />
           </ngt-group>
         </ngt-group>
 
@@ -65,56 +68,54 @@ export type GhostSkullModelGLTFResult = GLTF & {
     }
   `,
   imports: [NgtArgs],
-  hostDirectives: [
-    {
-      directive: NgtObjectEvents,
-      inputs: NgtObjectEventsInputs,
-      outputs: NgtObjectEventsOutputs,
-    },
-  ],
+  hostDirectives: [{ directive: NgtObjectEvents, inputs: NgtObjectEventsInputs, outputs: NgtObjectEventsOutputs }],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GhostSkullModel {
-  protected readonly Math = Math
+  protected readonly Math = Math;
 
-  options = input({} as Partial<NgtGroup>)
-  animations = model<GhostSkullModelAnimationApi>()
-  modelRef = viewChild<ElementRef<Group>>('model')
+  options = input({} as Partial<NgtGroup>);
+  animations = model<GhostSkullModelAnimationApi>();
+  modelRef = viewChild<ElementRef<Group>>('model');
 
   protected gltf = injectGLTF(() => '/Ghost_Skull-transformed.glb', {
     useDraco: true,
-  }) as unknown as Signal<GhostSkullModelGLTFResult | null>
+  }) as unknown as Signal<GhostSkullModelGLTFResult | null>;
+
+  protected hovered = signal(false);
 
   private scene = computed(() => {
-    const gltf = this.gltf()
-    if (!gltf) return null
-    return gltf.scene
-  })
+    const gltf = this.gltf();
+    if (!gltf) return null;
+    return gltf.scene;
+  });
 
-  private objectEvents = inject(NgtObjectEvents, { host: true })
+  private objectEvents = inject(NgtObjectEvents, { host: true });
 
   constructor() {
-    extend({ Group, SkinnedMesh })
+    extend({ Group, SkinnedMesh });
 
-    const animations = injectAnimations(this.gltf, this.scene)
+    injectModelAnimation(this.hovered, this.animations, 'Flying_Idle', 'Fast_Flying');
+
+    const animations = injectAnimations(this.gltf, this.scene);
     effect(
       () => {
         if (animations.ready()) {
-          this.animations.set(animations)
+          this.animations.set(animations);
         }
       },
       { allowSignalWrites: true },
-    )
+    );
 
     effect(
       () => {
-        const modelRef = this.modelRef()?.nativeElement
-        if (!modelRef) return
+        const modelRef = this.modelRef()?.nativeElement;
+        if (!modelRef) return;
 
-        this.objectEvents.ngtObjectEvents.set(modelRef)
+        this.objectEvents.ngtObjectEvents.set(modelRef);
       },
       { allowSignalWrites: true },
-    )
+    );
   }
 }

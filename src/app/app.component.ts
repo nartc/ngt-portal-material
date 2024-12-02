@@ -6,7 +6,7 @@ import { Experience } from './experience/experience.component';
   selector: 'app-root',
   standalone: true,
   template: `
-    <ngt-canvas [sceneGraph]="sceneGraph" />
+    <ngt-canvas [sceneGraph]="sceneGraph" [camera]="{ position: [0, 0, 10], fov: 30 }" />
   `,
   host: { class: 'block h-dvh w-full' },
   imports: [NgtCanvas],
