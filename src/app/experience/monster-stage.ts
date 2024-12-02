@@ -16,7 +16,6 @@ import { NgtsEnvironment } from 'angular-three-soba/staging';
 import CameraControls from 'camera-controls';
 import { easing } from 'maath';
 import { BackSide, ColorRepresentation, DoubleSide, Vector3 } from 'three';
-import { MonsterName } from './active-monster';
 
 @Component({
   selector: 'app-monster-stage',
@@ -53,7 +52,7 @@ export class MonsterStage {
   protected readonly BackSide = BackSide;
   protected readonly DoubleSide = DoubleSide;
 
-  name = input.required<MonsterName>();
+  name = input.required<string>();
   color = input.required<ColorRepresentation>();
   texturePath = input.required<string>();
   position = input<NgtVector3>([0, 0, 0]);
