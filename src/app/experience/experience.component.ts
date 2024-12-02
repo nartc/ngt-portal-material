@@ -15,6 +15,7 @@ import { NgtsEnvironment } from 'angular-three-soba/staging';
 import { BoxGeometry, Mesh, MeshBasicMaterial } from 'three';
 import { GhostSkullModel, GhostSkullModelAnimationApi } from './ghost-skull-model';
 import { MushroomKingModel, MushroomKingModelAnimationApi } from './mushroom-king-model';
+import { NinjaModel, NinjaModelAnimationApi } from './ninja-model';
 
 @Directive({
   selector: '[cursorPointer]',
@@ -53,17 +54,20 @@ export class CursorPointer {
 
     <app-ghost-skull-model [(animations)]="ghostSkullAnimations" />
     <app-mushroom-king-model [(animations)]="mushroomKingAnimations" [options]="{ position: [3, 0, -2] }" />
+    <app-ninja-model [(animations)]="ninjaAnimations" [options]="{ position: [-3, 0, -2] }" />
+
     <ngts-environment [options]="{ preset: 'city' }" />
   `,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CursorPointer, GhostSkullModel, NgtsEnvironment, MushroomKingModel],
+  imports: [CursorPointer, GhostSkullModel, NgtsEnvironment, MushroomKingModel, NinjaModel],
 })
 export class Experience {
   private meshRef = viewChild.required<ElementRef<Mesh>>('mesh');
 
   ghostSkullAnimations = signal<GhostSkullModelAnimationApi>(null);
   mushroomKingAnimations = signal<MushroomKingModelAnimationApi>(null);
+  ninjaAnimations = signal<NinjaModelAnimationApi>(null);
 
   protected hovered = signal(false);
   protected clicked = signal(false);
@@ -85,6 +89,13 @@ export class Experience {
 
     effect(() => {
       const animations = this.mushroomKingAnimations();
+      if (!animations) return;
+
+      animations.actions.Walk?.reset().fadeIn(0.5).play();
+    });
+
+    effect(() => {
+      const animations = this.ninjaAnimations();
       if (!animations) return;
 
       animations.actions.Walk?.reset().fadeIn(0.5).play();
