@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { injectBeforeRender, injectObjectEvents, injectStore, NgtArgs, NgtEuler, NgtVector3 } from 'angular-three';
+import { injectBeforeRender, injectStore, NgtArgs, NgtEuler, NgtVector3 } from 'angular-three';
 import { NgtsRoundedBox, NgtsText } from 'angular-three-soba/abstractions';
 import { injectTexture } from 'angular-three-soba/loaders';
 import { NgtsMeshPortalMaterial } from 'angular-three-soba/materials';
@@ -26,7 +26,7 @@ import { BackSide, ColorRepresentation, DoubleSide, Vector3 } from 'three';
         <ngt-mesh-basic-material [color]="color()" [toneMapped]="false" />
       </ngts-text>
 
-      <ngts-rounded-box [options]="{ width: 2, height: 3, depth: 0.1 }">
+      <ngts-rounded-box [options]="{ width: 2, height: 3, depth: 0.1 }" (dblclick)="active.set(!active())">
         <ngts-mesh-portal-material [options]="{ side: DoubleSide }">
           <ng-template>
             <ngt-ambient-light [intensity]="Math.PI * 0.5" />
@@ -66,15 +66,9 @@ export class MonsterStage {
   private store = injectStore();
   private controls = this.store.select('controls') as Signal<CameraControls>;
 
-  private active = signal(false);
+  protected active = signal(false);
 
   constructor() {
-    injectObjectEvents(() => this.roundedBoxRef().meshRef(), {
-      dblclick: () => {
-        this.active.update((active) => !active);
-      },
-    });
-
     effect(() => {
       const [isActive, roundedBox, controls] = [
         this.active(),

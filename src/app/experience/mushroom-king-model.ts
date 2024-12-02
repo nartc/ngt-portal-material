@@ -16,14 +16,7 @@ import {
   Signal,
   viewChild,
 } from '@angular/core';
-import {
-  extend,
-  NgtArgs,
-  NgtGroup,
-  NgtObjectEvents,
-  NgtObjectEventsInputs,
-  NgtObjectEventsOutputs,
-} from 'angular-three';
+import { extend, NgtArgs, NgtGroup, NgtObjectEvents } from 'angular-three';
 import { injectGLTF } from 'angular-three-soba/loaders';
 import { injectAnimations, NgtsAnimationApi, NgtsAnimationClips } from 'angular-three-soba/misc';
 import type * as THREE from 'three';
@@ -89,7 +82,26 @@ export type MushroomKingModelGLTFResult = GLTF & {
     }
   `,
   imports: [NgtArgs],
-  hostDirectives: [{ directive: NgtObjectEvents, inputs: NgtObjectEventsInputs, outputs: NgtObjectEventsOutputs }],
+  hostDirectives: [
+    {
+      directive: NgtObjectEvents,
+      outputs: [
+        'click',
+        'dblclick',
+        'contextmenu',
+        'pointerup',
+        'pointerdown',
+        'pointerover',
+        'pointerout',
+        'pointerenter',
+        'pointerleave',
+        'pointermove',
+        'pointermissed',
+        'pointercancel',
+        'wheel',
+      ],
+    },
+  ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
